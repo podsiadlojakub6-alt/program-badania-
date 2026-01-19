@@ -27,22 +27,20 @@ function removeColumn(){if(cols>1)cols--;render();}
 function calculateNature(){
     const data=[...table.querySelectorAll("tr")].slice(1)
         .map(r=>[...r.querySelectorAll("input")].map(i=>+i.value));
-    const alpha=+document.getElementById("alpha").value;
-    const probs=document.getElementById("probabilities").value.split(",").map(Number);
+    const alpha=+alpha.value;
     let out="";
 
     const wald=data.map(r=>Math.min(...r));
-    out+="WALD:\n"+wald.map((v,i)=>`S${i+1}: ${v}`).join("\n")+
-        `\n=> S${wald.indexOf(Math.max(...wald))+1}\n\n`;
+    out+="WALD:\n"+wald.map((v,i)=>`S${i+1}: ${v}`).join("\n")+"\n\n";
 
     const hur=data.map(r=>alpha*Math.min(...r)+(1-alpha)*Math.max(...r));
-    out+="HURWICZ:\n"+hur.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n")+"\n";
+    out+="HURWICZ:\n"+hur.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n");
 
     result.innerText=out;
 }
 render();
 
-/* ===== GRY DWUOSOBOWE ===== */
+/* ===== TEORIA GIER ===== */
 let gRows=2,gCols=2;
 const gTable=document.getElementById("gameTable");
 
@@ -71,50 +69,44 @@ function calculateGame(){
     const minimax=Math.min(...colMax);
 
     out+="STRATEGIE CZYSTE:\n";
+    out+=`Maximin: ${maximin}\nMinimax: ${minimax}\n\n`;
+
+    // punkt siodłowy
     if(maximin===minimax){
-        const a=rowMin.indexOf(maximin);
-        const b=colMax.indexOf(minimax);
-        out+=`Punkt siodłowy = ${maximin}\n\nPrawdopodobieństwa:\n`;
-        data.forEach((_,i)=>out+=`A${i+1}: ${i===a?"100%":"0%"}\n`);
-        out+="\n";
-        data[0].forEach((_,j)=>out+=`B${j+1}: ${j===b?"100%":"0%"}\n`);
+        const ai=rowMin.indexOf(maximin);
+        const bj=colMax.indexOf(minimax);
+        out+="PUNKT SIODŁOWY\n";
+        out+=`VA = VB = ${maximin}\n\n`;
+        out+="Gracz A:\n";
+        data.forEach((_,i)=>out+=`A${i+1}: ${i===ai?"100%":"0%"}\n`);
+        out+="\nGracz B:\n";
+        data[0].forEach((_,j)=>out+=`B${j+1}: ${j===bj?"100%":"0%"}\n`);
         gameResult.innerText=out;
         return;
     }
-    out+="Brak punktu siodłowego\n\n";
 
-    // ===== 2×2 =====
-    if(gRows===2 && gCols===2){
-        const [a,b]=data[0];
-        const [c,d]=data[1];
-        const denom=a-b-c+d;
-        const pA=(d-c)/denom;
-        const pB=(d-b)/denom;
-        const V=(a*d-b*c)/denom;
-        out+="STRATEGIE MIESZANE 2×2:\n";
-        out+=`A1: ${(pA*100).toFixed(2)}%\nA2: ${(100-pA*100).toFixed(2)}%\n\n`;
-        out+=`B1: ${(pB*100).toFixed(2)}%\nB2: ${(100-pB*100).toFixed(2)}%\n\n`;
-        out+=`VA = VB = ${V.toFixed(2)}\n`;
+    // strategie mieszane – tylko 2×2
+    if(gRows!==2 || gCols!==2){
+        out+="Brak punktu siodłowego.\n";
+        out+="Strategie mieszane tylko dla 2×2.\n";
+        gameResult.innerText=out;
+        return;
     }
 
-    // ===== 2×n =====
-    else if(gRows===2){
-        out+="STRATEGIE MIESZANE 2×n:\n";
-        out+="Gracz A losuje między A1 i A2.\n";
-        out+="Kolumny B ograniczają grę – wyznaczane geometrycznie.\n";
-        out+="(w praktyce: wybierz 2 najbardziej ograniczające kolumny)\n";
-    }
+    const a=data[0][0], b=data[0][1];
+    const c=data[1][0], d=data[1][1];
+    const denom=a-b-c+d;
 
-    // ===== m×2 =====
-    else if(gCols===2){
-        out+="STRATEGIE MIESZANE m×2:\n";
-        out+="Gracz B losuje między B1 i B2.\n";
-        out+="Wiersze A ograniczają grę.\n";
-    }
+    const V=(a*d-b*c)/denom;
+    const pA1=(d-c)/denom;
+    const pB1=(d-b)/denom;
 
-    else{
-        out+="⚠️ Strategie mieszane dla m×n wymagają programowania liniowego.\n";
-    }
+    out+="STRATEGIE MIESZANE (2×2)\n\n";
+    out+="Gracz A:\n";
+    out+=`A1: ${(pA1*100).toFixed(2)}%\nA2: ${(100-pA1*100).toFixed(2)}%\n\n`;
+    out+="Gracz B:\n";
+    out+=`B1: ${(pB1*100).toFixed(2)}%\nB2: ${(100-pB1*100).toFixed(2)}%\n\n`;
+    out+=`VA = VB = ${V.toFixed(2)}\n`;
 
     gameResult.innerText=out;
 }
