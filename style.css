@@ -1,7 +1,7 @@
 body {
     background: #f4f6f8;
-    font-family: "Segoe UI", sans-serif;
-    padding: 40px;
+    font-family: Arial, sans-serif;
+    padding: 30px;
 }
 
 .tabs {
@@ -12,8 +12,8 @@ body {
 
 .tabs button {
     padding: 10px 16px;
-    border: none;
     border-radius: 8px;
+    border: none;
     background: #e5e7eb;
     cursor: pointer;
 }
@@ -25,6 +25,10 @@ body {
     padding: 30px;
     border-radius: 14px;
     box-shadow: 0 12px 25px rgba(0,0,0,.12);
+}
+
+.controls button {
+    margin: 4px;
 }
 
 table {
@@ -40,8 +44,7 @@ th, td {
 }
 
 input {
-    width: 80px;
-    padding: 5px;
+    width: 70px;
     text-align: center;
 }
 
@@ -52,10 +55,6 @@ button.main {
     border-radius: 8px;
     border: none;
     cursor: pointer;
-}
-
-.controls button {
-    margin: 4px;
 }
 
 pre {
