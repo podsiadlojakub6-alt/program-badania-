@@ -1,0 +1,25 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 30px;
+}
+
+table {
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+td, th {
+    border: 1px solid #333;
+    padding: 8px;
+    text-align: center;
+}
+
+input {
+    width: 70px;
+    text-align: center;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+}
