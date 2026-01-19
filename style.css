@@ -4,6 +4,12 @@ body {
     padding: 30px;
 }
 
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
 .tabs button {
     padding: 10px 16px;
     border-radius: 8px;
@@ -14,7 +20,7 @@ body {
 
 .card {
     background: white;
-    max-width: 1000px;
+    max-width: 900px;
     margin: auto;
     padding: 30px;
     border-radius: 14px;
@@ -57,4 +63,33 @@ pre {
     padding: 20px;
     border-radius: 10px;
     margin-top: 20px;
+}
+
+.hidden {
+    display: none;
+}
+
+/* ===== BAYES ===== */
+.bayes-box {
+    margin-top: 15px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #f9fafb;
+}
+
+.bayes-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.bayes-row input {
+    width: 80px;
+}
+
+.bayes-sum {
+    margin-top: 8px;
+    font-weight: bold;
 }
