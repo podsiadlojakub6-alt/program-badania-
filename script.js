@@ -1,79 +1,186 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <title>Kalkulator teorii decyzji i gier</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+/* ================= ZAKŁADKI ================= */
+function showTab(id) {
+    ["nature","games","hungarian"].forEach(t =>
+        document.getElementById(t).classList.add("hidden")
+    );
+    document.getElementById(id).classList.remove("hidden");
+}
 
-<div class="tabs">
-    <button onclick="showTab('nature')">🌿 Gra z naturą</button>
-    <button onclick="showTab('games')">🎲 Gry dwuosobowe</button>
-    <button onclick="showTab('hungarian')">🧩 Algorytm węgierski</button>
-</div>
+/* ================= GRA Z NATURĄ ================= */
+let rows = 3, cols = 3;
+const table = document.getElementById("matrix");
 
-<!-- ================= GRA Z NATURĄ ================= -->
-<div id="nature" class="card">
-    <h1>Gra z naturą</h1>
+function render() {
+    table.innerHTML = "";
+    let h = "<tr><th>Strategia</th>";
+    for (let j=0;j<cols;j++) h += `<th>Stan ${j+1}</th>`;
+    h += "</tr>";
+    table.innerHTML += h;
 
-    <div class="controls">
-        <button onclick="addRow()">➕ Strategia</button>
-        <button onclick="removeRow()">➖ Strategia</button>
-        <button onclick="addColumn()">➕ Stan natury</button>
-        <button onclick="removeColumn()">➖ Stan natury</button>
-    </div>
+    for (let i=0;i<rows;i++) {
+        let r = `<tr><td>S${i+1}</td>`;
+        for (let j=0;j<cols;j++) r += `<td><input value="0"></td>`;
+        r += "</tr>";
+        table.innerHTML += r;
+    }
+}
+function addRow(){rows++;render();}
+function removeRow(){if(rows>1)rows--;render();}
+function addColumn(){cols++;render();}
+function removeColumn(){if(cols>1)cols--;render();}
 
-    <table id="matrix"></table>
+function calculateNature() {
+    const data=[...table.querySelectorAll("tr")].slice(1)
+        .map(r=>[...r.querySelectorAll("input")].map(i=>+i.value));
+    const alpha=+alpha.value;
+    const probs=probabilities.value.split(",").map(Number);
 
-    <div class="params">
-        <label>α (Hurwicz):
-            <input id="alpha" value="0.6">
-        </label>
+    let out="";
 
-        <label>Prawdopodobieństwa (Bayes):
-            <input id="probabilities" value="0.3,0.3,0.4">
-        </label>
-    </div>
+    const wald=data.map(r=>Math.min(...r));
+    out+="WALD:\n"+wald.map((v,i)=>`S${i+1}: ${v}`).join("\n")+
+         `\n=> S${wald.indexOf(Math.max(...wald))+1}\n\n`;
 
-    <button class="main" onclick="calculateNature()">Oblicz</button>
-    <pre id="result"></pre>
-</div>
+    const hur=data.map(r=>alpha*Math.min(...r)+(1-alpha)*Math.max(...r));
+    out+="HURWICZ:\n"+hur.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n")+
+         `\n=> S${hur.indexOf(Math.max(...hur))+1}\n\n`;
 
-<!-- ================= GRY DWUOSOBOWE ================= -->
-<div id="games" class="card hidden">
-    <h1>Gra dwuosobowa (suma zerowa)</h1>
+    const bay=data.map(r=>r.reduce((s,v,i)=>s+v*(probs[i]||0),0));
+    out+="BAYES:\n"+bay.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n")+
+         `\n=> S${bay.indexOf(Math.max(...bay))+1}\n`;
 
-    <div class="controls">
-        <button onclick="addGameRow()">➕ Strategia A</button>
-        <button onclick="removeGameRow()">➖ Strategia A</button>
-        <button onclick="addGameCol()">➕ Strategia B</button>
-        <button onclick="removeGameCol()">➖ Strategia B</button>
-    </div>
+    result.innerText=out;
+}
+render();
 
-    <table id="gameTable"></table>
+/* ================= GRY DWUOSOBOWE ================= */
+let gRows = 2, gCols = 2;
+const gTable = document.getElementById("gameTable");
 
-    <button class="main" onclick="calculateGame()">Oblicz grę</button>
-    <pre id="gameResult"></pre>
-</div>
+function renderGame() {
+    gTable.innerHTML = "";
+    let h = "<tr><th>A \\ B</th>";
+    for (let j=0;j<gCols;j++) h += `<th>B${j+1}</th>`;
+    h += "</tr>";
+    gTable.innerHTML += h;
 
-<!-- ================= ALGORYTM WĘGIERSKI ================= -->
-<div id="hungarian" class="card hidden">
-    <h1>Algorytm węgierski – problem przydziału</h1>
+    for (let i=0;i<gRows;i++) {
+        let r = `<tr><th>A${i+1}</th>`;
+        for (let j=0;j<gCols;j++) r += `<td><input value="0"></td>`;
+        r += "</tr>";
+        gTable.innerHTML += r;
+    }
+}
 
-    <div class="controls">
-        <button onclick="addHungarianRow()">➕ Wiersz</button>
-        <button onclick="removeHungarianRow()">➖ Wiersz</button>
-        <button onclick="addHungarianCol()">➕ Kolumna</button>
-        <button onclick="removeHungarianCol()">➖ Kolumna</button>
-    </div>
+function addGameRow(){gRows++;renderGame();}
+function removeGameRow(){if(gRows>1)gRows--;renderGame();}
+function addGameCol(){gCols++;renderGame();}
+function removeGameCol(){if(gCols>1)gCols--;renderGame();}
 
-    <table id="hungarianTable"></table>
+function calculateGame() {
+    const data=[...gTable.querySelectorAll("tr")].slice(1)
+        .map(r=>[...r.querySelectorAll("input")].map(i=>+i.value));
 
-    <button class="main" onclick="solveHungarian()">Rozwiąż</button>
-    <pre id="hungarianResult"></pre>
-</div>
+    let out="";
 
-<script src="script.js"></script>
-</body>
-</html>
+    // STRATEGIE CZYSTE
+    const rowMin=data.map(r=>Math.min(...r));
+    const colMax=data[0].map((_,j)=>Math.max(...data.map(r=>r[j])));
+
+    const maximin=Math.max(...rowMin);
+    const minimax=Math.min(...colMax);
+
+    out+="STRATEGIE CZYSTE:\n";
+    out+=`Maximin: ${maximin}\nMinimax: ${minimax}\n`;
+
+    if(maximin===minimax){
+        out+=`👉 Punkt siodłowy, wartość gry = ${maximin}\n\n`;
+    } else {
+        out+="👉 Brak punktu siodłowego\n\n";
+    }
+
+    // STRATEGIE MIESZANE (TYLKO 2x2)
+    if(gRows===2 && gCols===2){
+        const a=data[0][0], b=data[0][1];
+        const c=data[1][0], d=data[1][1];
+        const denom=a-b-c+d;
+
+        if(denom!==0){
+            const pA1=(d-c)/denom;
+            const pA2=1-pA1;
+            const pB1=(d-b)/denom;
+            const pB2=1-pB1;
+            const V=(a*d-b*c)/denom;
+
+            out+="STRATEGIE MIESZANE (2×2):\n\n";
+            out+=`Gracz A:\nA1: ${(pA1*100).toFixed(2)}%\nA2: ${(pA2*100).toFixed(2)}%\n\n`;
+            out+=`Gracz B:\nB1: ${(pB1*100).toFixed(2)}%\nB2: ${(pB2*100).toFixed(2)}%\n\n`;
+            out+=`VA = VB = ${V.toFixed(2)}\n`;
+            out+=`Maksymalny zysk A: ${V.toFixed(2)}\n`;
+            out+=`Maksymalna strata B: ${V.toFixed(2)}\n`;
+        } else {
+            out+="Strategie mieszane: brak (dzielnik = 0)\n";
+        }
+    } else {
+        out+="Strategie mieszane liczone tylko dla macierzy 2×2\n";
+    }
+
+    gameResult.innerText=out;
+}
+renderGame();
+
+/* ================= ALGORYTM WĘGIERSKI ================= */
+let hRows=3,hCols=3;
+const hTable=document.getElementById("hungarianTable");
+
+function renderHungarian(){
+    hTable.innerHTML="";
+    let h="<tr><th></th>";
+    for(let j=0;j<hCols;j++) h+=`<th>Z${j+1}</th>`;
+    h+="</tr>";
+    hTable.innerHTML+=h;
+
+    for(let i=0;i<hRows;i++){
+        let r=`<tr><th>W${i+1}</th>`;
+        for(let j=0;j<hCols;j++) r+=`<td><input value="0"></td>`;
+        r+="</tr>";
+        hTable.innerHTML+=r;
+    }
+}
+
+function addHungarianRow(){hRows++;renderHungarian();}
+function removeHungarianRow(){if(hRows>1)hRows--;renderHungarian();}
+function addHungarianCol(){hCols++;renderHungarian();}
+function removeHungarianCol(){if(hCols>1)hCols--;renderHungarian();}
+
+function solveHungarian(){
+    const matrix=[...hTable.querySelectorAll("tr")].slice(1)
+        .map(r=>[...r.querySelectorAll("input")].map(i=>+i.value));
+
+    const n=matrix.length;
+    const used=Array(n).fill(false);
+    let best=Infinity, bestAssign=[];
+
+    function backtrack(i,sum,assign){
+        if(sum>=best) return;
+        if(i===n){
+            best=sum;
+            bestAssign=[...assign];
+            return;
+        }
+        for(let j=0;j<n;j++){
+            if(!used[j]){
+                used[j]=true;
+                assign[i]=j;
+                backtrack(i+1,sum+matrix[i][j],assign);
+                used[j]=false;
+            }
+        }
+    }
+    backtrack(0,0,[]);
+    let out="Optymalny przydział:\n";
+    bestAssign.forEach((v,i)=>out+=`W${i+1} → Z${v+1}\n`);
+    out+=`\nMinimalny koszt całkowity: ${best}`;
+    hungarianResult.innerText=out;
+}
+renderHungarian();
