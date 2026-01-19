@@ -1,121 +1,113 @@
-// ====== ZAKŁADKI ======
+/* ========= ZAKŁADKI ========= */
 function showTab(id) {
-    document.getElementById("nature").classList.add("hidden");
-    document.getElementById("games").classList.add("hidden");
+    ["nature","games","hungarian"].forEach(t =>
+        document.getElementById(t).classList.add("hidden")
+    );
     document.getElementById(id).classList.remove("hidden");
 }
 
-// ====== GRA Z NATURĄ ======
-let rows = 3;
-let cols = 3;
+/* ========= GRA Z NATURĄ ========= */
+let rows = 3, cols = 3;
 const table = document.getElementById("matrix");
 
 function render() {
     table.innerHTML = "";
+    let h = "<tr><th>Strategia</th>";
+    for (let j=0;j<cols;j++) h += `<th>Stan ${j+1}</th>`;
+    h += "</tr>";
+    table.innerHTML += h;
 
-    const header = document.createElement("tr");
-    header.innerHTML = "<th>Strategia</th>";
-    for (let j = 0; j < cols; j++) {
-        header.innerHTML += `<th>Stan ${j+1}</th>`;
-    }
-    table.appendChild(header);
-
-    for (let i = 0; i < rows; i++) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>S${i+1}</td>`;
-        for (let j = 0; j < cols; j++) {
-            tr.innerHTML += `<td><input value="0"></td>`;
-        }
-        table.appendChild(tr);
+    for (let i=0;i<rows;i++) {
+        let r = `<tr><td>S${i+1}</td>`;
+        for (let j=0;j<cols;j++) r += `<td><input value="0"></td>`;
+        r += "</tr>";
+        table.innerHTML += r;
     }
 }
-
-function addRow() { rows++; render(); }
-function removeRow() { if (rows > 1) rows--; render(); }
-function addColumn() { cols++; render(); }
-function removeColumn() { if (cols > 1) cols--; render(); }
-
-function getData() {
-    return [...table.querySelectorAll("tr")]
-        .slice(1)
-        .map(r => [...r.querySelectorAll("input")].map(i => Number(i.value)));
-}
+function addRow(){rows++;render();}
+function removeRow(){if(rows>1)rows--;render();}
+function addColumn(){cols++;render();}
+function removeColumn(){if(cols>1)cols--;render();}
 
 function calculateNature() {
-    const data = getData();
-    const alpha = Number(document.getElementById("alpha").value);
-    const probs = document.getElementById("probabilities").value.split(",").map(Number);
+    const data=[...table.querySelectorAll("tr")].slice(1)
+        .map(r=>[...r.querySelectorAll("input")].map(i=>+i.value));
+    const alpha=+alphaInput.value;
+    const probs=probabilities.value.split(",").map(Number);
+    let out="";
 
-    let out = "";
+    const wald=data.map(r=>Math.min(...r));
+    out+="WALD:\n"+wald.map((v,i)=>`S${i+1}: ${v}`).join("\n")+
+         `\n=> S${wald.indexOf(Math.max(...wald))+1}\n\n`;
 
-    const wald = data.map(r => Math.min(...r));
-    out += "WALD:\n";
-    wald.forEach((v,i)=> out += `S${i+1}: ${v}\n`);
-    out += `=> Najlepsza: S${wald.indexOf(Math.max(...wald))+1}\n\n`;
+    const hur=data.map(r=>alpha*Math.min(...r)+(1-alpha)*Math.max(...r));
+    out+="HURWICZ:\n"+hur.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n")+
+         `\n=> S${hur.indexOf(Math.max(...hur))+1}\n\n`;
 
-    const hurwicz = data.map(r =>
-        alpha * Math.min(...r) + (1-alpha) * Math.max(...r)
-    );
-    out += "HURWICZ:\n";
-    hurwicz.forEach((v,i)=> out += `S${i+1}: ${v.toFixed(2)}\n`);
-    out += `=> Najlepsza: S${hurwicz.indexOf(Math.max(...hurwicz))+1}\n\n`;
+    const bay=data.map(r=>r.reduce((s,v,i)=>s+v*(probs[i]||0),0));
+    out+="BAYES:\n"+bay.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n")+
+         `\n=> S${bay.indexOf(Math.max(...bay))+1}\n`;
 
-    const bayes = data.map(r =>
-        r.reduce((s,v,i)=> s + v*(probs[i]||0),0)
-    );
-    out += "BAYES:\n";
-    bayes.forEach((v,i)=> out += `S${i+1}: ${v.toFixed(2)}\n`);
-    out += `=> Najlepsza: S${bayes.indexOf(Math.max(...bayes))+1}\n\n`;
-
-    const maxCols = data[0].map((_,c)=> Math.max(...data.map(r=>r[c])));
-    const savage = data.map(r =>
-        Math.max(...r.map((v,i)=> maxCols[i]-v))
-    );
-    out += "SAVAGE:\n";
-    savage.forEach((v,i)=> out += `S${i+1}: ${v}\n`);
-    out += `=> Najlepsza: S${savage.indexOf(Math.min(...savage))+1}`;
-
-    document.getElementById("result").innerText = out;
+    result.innerText=out;
 }
-
-// ====== GRY DWUOSOBOWE ======
-function calculateGame() {
-    const a = Number(document.getElementById("a").value);
-    const b = Number(document.getElementById("b").value);
-    const c = Number(document.getElementById("c").value);
-    const d = Number(document.getElementById("d").value);
-
-    const denom = a - b - c + d;
-    let out = "";
-
-    const rowMin = [Math.min(a,b), Math.min(c,d)];
-    const colMax = [Math.max(a,c), Math.max(b,d)];
-
-    if (Math.max(...rowMin) === Math.min(...colMax)) {
-        out += "🎯 STRATEGIE CZYSTE (punkt siodłowy)\n";
-        out += `Wartość gry: ${Math.max(...rowMin)}\n`;
-    } else {
-        const pA1 = (d - c) / denom;
-        const pA2 = 1 - pA1;
-        const pB1 = (d - b) / denom;
-        const pB2 = 1 - pB1;
-        const V = (a*d - b*c) / denom;
-
-        out += "🎲 STRATEGIE MIESZANE\n\n";
-        out += "Gracz A:\n";
-        out += `A1: ${(pA1*100).toFixed(2)}%\n`;
-        out += `A2: ${(pA2*100).toFixed(2)}%\n\n`;
-
-        out += "Gracz B:\n";
-        out += `B1: ${(pB1*100).toFixed(2)}%\n`;
-        out += `B2: ${(pB2*100).toFixed(2)}%\n\n`;
-
-        out += `VA = VB = ${V.toFixed(2)}\n`;
-        out += `Maksymalny zysk A: ${V.toFixed(2)}\n`;
-        out += `Maksymalna strata B: ${V.toFixed(2)}\n`;
-    }
-
-    document.getElementById("gameResult").innerText = out;
-}
-
 render();
+
+/* ========= GRY DWUOSOBOWE ========= */
+function calculateGame() {
+    const a=+A.value,b=+B.value,c=+C.value,d=+D.value;
+}
+
+/* ========= ALGORYTM WĘGIERSKI ========= */
+let hRows=3, hCols=3;
+const hTable=document.getElementById("hungarianTable");
+
+function renderHungarian(){
+    hTable.innerHTML="";
+    let h="<tr><th></th>";
+    for(let j=0;j<hCols;j++) h+=`<th>Z${j+1}</th>`;
+    h+="</tr>";
+    hTable.innerHTML+=h;
+
+    for(let i=0;i<hRows;i++){
+        let r=`<tr><th>W${i+1}</th>`;
+        for(let j=0;j<hCols;j++) r+=`<td><input value="0"></td>`;
+        r+="</tr>";
+        hTable.innerHTML+=r;
+    }
+}
+function addHungarianRow(){hRows++;renderHungarian();}
+function removeHungarianRow(){if(hRows>1)hRows--;renderHungarian();}
+function addHungarianCol(){hCols++;renderHungarian();}
+function removeHungarianCol(){if(hCols>1)hCols--;renderHungarian();}
+
+function solveHungarian(){
+    const matrix=[...hTable.querySelectorAll("tr")].slice(1)
+        .map(r=>[...r.querySelectorAll("input")].map(i=>+i.value));
+
+    const n=matrix.length;
+    const used=Array(n).fill(false);
+    let best=Infinity, bestAssign=[];
+
+    function backtrack(i,sum,assign){
+        if(sum>=best) return;
+        if(i===n){
+            best=sum;
+            bestAssign=[...assign];
+            return;
+        }
+        for(let j=0;j<n;j++){
+            if(!used[j]){
+                used[j]=true;
+                assign[i]=j;
+                backtrack(i+1,sum+matrix[i][j],assign);
+                used[j]=false;
+            }
+        }
+    }
+    backtrack(0,0,[]);
+    let out="Optymalny przydział:\n";
+    bestAssign.forEach((v,i)=>out+=`W${i+1} → Z${v+1}\n`);
+    out+=`\nMinimalny koszt całkowity: ${best}`;
+    hungarianResult.innerText=out;
+}
+renderHungarian();
