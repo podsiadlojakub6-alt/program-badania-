@@ -2,13 +2,19 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Gra z naturą – kalkulator</title>
+    <title>Kalkulator teorii decyzji i gier</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="card">
-    <h1>🎯 Kalkulator gier z naturą</h1>
+<div class="tabs">
+    <button onclick="showTab('nature')">🌿 Gra z naturą</button>
+    <button onclick="showTab('games')">🎲 Gry dwuosobowe</button>
+</div>
+
+<!-- ===== GRA Z NATURĄ ===== -->
+<div id="nature" class="card">
+    <h1>Gra z naturą</h1>
 
     <div class="controls">
         <button onclick="addRow()">➕ Strategia</button>
@@ -29,9 +35,36 @@
         </label>
     </div>
 
-    <button class="main" onclick="calculate()">Oblicz</button>
+    <button class="main" onclick="calculateNature()">Oblicz</button>
 
     <pre id="result"></pre>
+</div>
+
+<!-- ===== GRY DWUOSOBOWE ===== -->
+<div id="games" class="card hidden">
+    <h1>Gra dwuosobowa 2×2 (suma zerowa)</h1>
+
+    <table>
+        <tr>
+            <th></th>
+            <th>B1</th>
+            <th>B2</th>
+        </tr>
+        <tr>
+            <th>A1</th>
+            <td><input id="a" value="3"></td>
+            <td><input id="b" value="1"></td>
+        </tr>
+        <tr>
+            <th>A2</th>
+            <td><input id="c" value="0"></td>
+            <td><input id="d" value="2"></td>
+        </tr>
+    </table>
+
+    <button class="main" onclick="calculateGame()">Oblicz grę</button>
+
+    <pre id="gameResult"></pre>
 </div>
 
 <script src="script.js"></script>
