@@ -1,87 +1,150 @@
-/* ===== ZAKŁADKI ===== */
+/* ================= ZAKŁADKI ================= */
 function showTab(id) {
-    document.querySelectorAll(".card").forEach(c => c.classList.add("hidden"));
+    ["games","hungarian"].forEach(t =>
+        document.getElementById(t).classList.add("hidden")
+    );
     document.getElementById(id).classList.remove("hidden");
 }
 
-/* ===== GRA Z NATURĄ ===== */
-let rows = 3, cols = 3;
-const table = document.getElementById("matrix");
+/* ================= TEORIA GIER – x ================= */
+let gRows = 2, gCols = 2;
+const gTable = document.getElementById("gameTable");
 
-function render() {
-    table.innerHTML = "<tr><th>Strategia</th>" +
-        [...Array(cols)].map((_,j)=>`<th>Stan ${j+1}</th>`).join("") +
+function renderGame() {
+    gTable.innerHTML =
+        "<tr><th>A\\B</th>" +
+        [...Array(gCols)].map((_,j)=>`<th>B${j+1}</th>`).join("") +
         "</tr>";
 
-    for (let i = 0; i < rows; i++) {
-        table.innerHTML += "<tr><td>S"+(i+1)+"</td>" +
-            [...Array(cols)].map(()=>"<td><input value='0'></td>").join("") +
+    for (let i=0;i<gRows;i++) {
+        gTable.innerHTML +=
+            `<tr><th>A${i+1}</th>` +
+            [...Array(gCols)].map(()=>"<td><input value='0'></td>").join("") +
             "</tr>";
     }
 }
+function addGameRow(){ gRows++; renderGame(); }
+function removeGameRow(){ if(gRows>1) gRows--; renderGame(); }
+function addGameCol(){ gCols++; renderGame(); }
+function removeGameCol(){ if(gCols>1) gCols--; renderGame(); }
 
-function renderBayes() {
-    const box = document.getElementById("bayesInputs");
-    box.innerHTML = "";
+renderGame();
 
-    for (let j = 0; j < cols; j++) {
-        const row = document.createElement("div");
-        row.className = "bayes-row";
-        row.innerHTML = `
-            <label>Stan ${j+1}:</label>
-            <input type="number" step="0.01" value="${(1/cols).toFixed(2)}"
-                   class="bayesProb" oninput="updateBayesSum()">
-        `;
-        box.appendChild(row);
+function analyzeSaddle() {
+    const inputs=[...gTable.querySelectorAll("input")];
+    const xIndex=inputs.findIndex(i=>i.value.trim()==="x");
+
+    if(xIndex===-1){
+        gameResult.innerText="❌ Wpisz dokładnie jedno x.";
+        return;
     }
-    updateBayesSum();
+
+    const base=[];
+    let k=0;
+    for(let i=0;i<gRows;i++){
+        base[i]=[];
+        for(let j=0;j<gCols;j++){
+            base[i][j]=inputs[k].value==="x"?"x":Number(inputs[k].value);
+            k++;
+        }
+    }
+
+    const XMIN=-500, XMAX=500;
+    let intervals=[], open=false, start=null;
+
+    for(let x=XMIN;x<=XMAX;x++){
+        const m=base.map(r=>r.map(v=>v==="x"?x:v));
+        const rowMin=m.map(r=>Math.min(...r));
+        const colMax=m[0].map((_,j)=>Math.max(...m.map(r=>r[j])));
+        const maximin=Math.max(...rowMin);
+        const minimax=Math.min(...colMax);
+
+        if(Math.abs(maximin-minimax)<1e-6){
+            if(!open){ open=true; start=x; }
+        } else if(open){
+            intervals.push([start,x-1]);
+            open=false;
+        }
+    }
+    if(open) intervals.push([start,XMAX]);
+
+    if(intervals.length===0){
+        gameResult.innerText="❌ Brak x dających punkt siodłowy.";
+        return;
+    }
+
+    let out="🎯 Gra jest siodłowa dla:\n\n";
+    intervals.forEach(i=>out+=`x ∈ [${i[0]}, ${i[1]}]\n`);
+    gameResult.innerText=out;
 }
 
-function updateBayesSum() {
-    const probs = [...document.querySelectorAll(".bayesProb")]
-        .map(i => Number(i.value));
-    const sum = probs.reduce((a,b)=>a+b,0);
+/* ================= ALGORYTM WĘGIERSKI ================= */
+let hRows=3,hCols=3;
+const hTable=document.getElementById("hungarianTable");
 
-    const info = document.getElementById("bayesSum");
-    info.innerText = `Suma: ${sum.toFixed(2)}`;
-    info.style.color = Math.abs(sum - 1) < 0.001 ? "green" : "red";
+function renderHungarian(){
+    hTable.innerHTML="<tr><th></th>"+
+        [...Array(hCols)].map((_,j)=>`<th>Z${j+1}</th>`).join("")+"</tr>";
+    for(let i=0;i<hRows;i++){
+        hTable.innerHTML+=
+            `<tr><th>W${i+1}</th>`+
+            [...Array(hCols)].map(()=>"<td><input value='0'></td>").join("")+
+            "</tr>";
+    }
 }
+function addHungarianRow(){hRows++;renderHungarian();}
+function removeHungarianRow(){if(hRows>1)hRows--;renderHungarian();}
+function addHungarianCol(){hCols++;renderHungarian();}
+function removeHungarianCol(){if(hCols>1)hCols--;renderHungarian();}
 
-function addRow(){ rows++; render(); renderBayes(); }
-function removeRow(){ if(rows>1) rows--; render(); renderBayes(); }
-function addColumn(){ cols++; render(); renderBayes(); }
-function removeColumn(){ if(cols>1) cols--; render(); renderBayes(); }
+renderHungarian();
 
-function calculateNature() {
-    const data = [...table.querySelectorAll("tr")].slice(1)
-        .map(r => [...r.querySelectorAll("input")].map(i => +i.value));
+function solveHungarian(){
+    let matrix=[...hTable.querySelectorAll("tr")].slice(1)
+        .map(r=>[...r.querySelectorAll("input")].map(i=>+i.value));
 
-    const alpha = +document.getElementById("alpha").value;
-    const probs = [...document.querySelectorAll(".bayesProb")]
-        .map(i => +i.value);
+    const mode=document.getElementById("hungarianMode").value;
 
-    let out = "";
+    // MAKSYMALIZACJA → transformacja
+    let maxVal=0;
+    matrix.forEach(r=>r.forEach(v=>maxVal=Math.max(maxVal,v)));
 
-    const wald = data.map(r => Math.min(...r));
-    out += "WALD:\n" + wald.map((v,i)=>`S${i+1}: ${v}`).join("\n") + "\n\n";
+    let cost = (mode==="max")
+        ? matrix.map(r=>r.map(v=>maxVal-v))
+        : matrix.map(r=>r.slice());
 
-    const hur = data.map(r =>
-        alpha * Math.min(...r) + (1-alpha) * Math.max(...r)
-    );
-    out += "HURWICZ:\n" + hur.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n") + "\n\n";
+    const n=cost.length;
+    const used=Array(n).fill(false);
+    let best=Infinity, bestAssign=[];
 
-    const bayes = data.map(r =>
-        r.reduce((s,v,i)=> s + v*(probs[i]||0), 0)
-    );
-    out += "BAYES (średnia ważona):\n" +
-        bayes.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n") +
-        `\n=> Najlepsza: S${bayes.indexOf(Math.max(...bayes))+1}`;
+    function dfs(i,sum,assign){
+        if(sum>=best) return;
+        if(i===n){
+            best=sum;
+            bestAssign=[...assign];
+            return;
+        }
+        for(let j=0;j<n;j++){
+            if(!used[j]){
+                used[j]=true;
+                assign[i]=j;
+                dfs(i+1,sum+cost[i][j],assign);
+                used[j]=false;
+            }
+        }
+    }
+    dfs(0,0,[]);
 
-    result.innerText = out;
+    let realValue = (mode==="max")
+        ? bestAssign.reduce((s,j,i)=>s+matrix[i][j],0)
+        : best;
+
+    let out="Optymalny przydział:\n";
+    bestAssign.forEach((j,i)=>out+=`W${i+1} → Z${j+1}\n`);
+    out+=`\n`;
+    out+= mode==="max"
+        ? `Maksymalna wartość: ${realValue}`
+        : `Minimalny koszt: ${realValue}`;
+
+    hungarianResult.innerText=out;
 }
-
-render();
-renderBayes();
-
-/* ===== POZOSTAŁE ZAKŁADKI ===== */
-/* (teoria gier, węgierski, parametryczna – BEZ ZMIAN względem poprzedniej wersji) */
