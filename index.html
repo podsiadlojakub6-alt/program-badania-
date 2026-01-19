@@ -2,51 +2,19 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Kalkulator teorii decyzji i gier</title>
+    <title>Kalkulator teorii gier i OR</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="tabs">
-    <button onclick="showTab('nature')">🌿 Gra z naturą</button>
     <button onclick="showTab('games')">🎲 Teoria gier</button>
     <button onclick="showTab('hungarian')">🧩 Algorytm węgierski</button>
-    <button onclick="showTab('param')">📐 Gra parametryczna</button>
-</div>
-
-<!-- ================= GRA Z NATURĄ ================= -->
-<div id="nature" class="card">
-    <h1>Gra z naturą</h1>
-
-    <div class="controls">
-        <button onclick="addRow()">➕ Strategia</button>
-        <button onclick="removeRow()">➖ Strategia</button>
-        <button onclick="addColumn()">➕ Stan natury</button>
-        <button onclick="removeColumn()">➖ Stan natury</button>
-    </div>
-
-    <table id="matrix"></table>
-
-    <div class="params">
-        <label>α (Hurwicz):
-            <input id="alpha" value="0.6">
-        </label>
-    </div>
-
-    <!-- ===== BAYES ===== -->
-    <div class="bayes-box">
-        <h3>Bayes – prawdopodobieństwa stanów natury</h3>
-        <div id="bayesInputs"></div>
-        <div id="bayesSum" class="bayes-sum"></div>
-    </div>
-
-    <button class="main" onclick="calculateNature()">Oblicz</button>
-    <pre id="result"></pre>
 </div>
 
 <!-- ================= TEORIA GIER ================= -->
-<div id="games" class="card hidden">
-    <h1>Gra dwuosobowa (suma zerowa)</h1>
+<div id="games" class="card">
+    <h1>Gra dwuosobowa (punkt siodłowy, x)</h1>
 
     <div class="controls">
         <button onclick="addGameRow()">➕ Strategia A</button>
@@ -55,15 +23,17 @@
         <button onclick="removeGameCol()">➖ Strategia B</button>
     </div>
 
+    <p>Jedna komórka może być zmienna – wpisz <b>x</b></p>
+
     <table id="gameTable"></table>
 
-    <button class="main" onclick="calculateGame()">Oblicz grę</button>
+    <button class="main" onclick="analyzeSaddle()">Analizuj punkt siodłowy</button>
     <pre id="gameResult"></pre>
 </div>
 
 <!-- ================= ALGORYTM WĘGIERSKI ================= -->
 <div id="hungarian" class="card hidden">
-    <h1>Algorytm węgierski</h1>
+    <h1>Algorytm węgierski – problem przydziału</h1>
 
     <div class="controls">
         <button onclick="addHungarianRow()">➕ Wiersz</button>
@@ -72,27 +42,18 @@
         <button onclick="removeHungarianCol()">➖ Kolumna</button>
     </div>
 
+    <label>
+        Tryb:
+        <select id="hungarianMode">
+            <option value="min">Minimalizacja</option>
+            <option value="max">Maksymalizacja</option>
+        </select>
+    </label>
+
     <table id="hungarianTable"></table>
 
     <button class="main" onclick="solveHungarian()">Rozwiąż</button>
     <pre id="hungarianResult"></pre>
-</div>
-
-<!-- ================= GRA PARAMETRYCZNA ================= -->
-<div id="param" class="card hidden">
-    <h1>Gra parametryczna</h1>
-
-    <div class="controls">
-        <button onclick="addParamRow()">➕ Wiersz</button>
-        <button onclick="removeParamRow()">➖ Wiersz</button>
-        <button onclick="addParamCol()">➕ Kolumna</button>
-        <button onclick="removeParamCol()">➖ Kolumna</button>
-    </div>
-
-    <table id="paramTable"></table>
-
-    <button class="main" onclick="analyzeParamGame()">Analizuj</button>
-    <pre id="paramResult"></pre>
 </div>
 
 <script src="script.js"></script>
