@@ -42,13 +42,16 @@
 
 <!-- ================= GRY DWUOSOBOWE ================= -->
 <div id="games" class="card hidden">
-    <h1>Gra dwuosobowa 2×2</h1>
+    <h1>Gra dwuosobowa (suma zerowa)</h1>
 
-    <table>
-        <tr><th></th><th>B1</th><th>B2</th></tr>
-        <tr><th>A1</th><td><input id="a" value="3"></td><td><input id="b" value="1"></td></tr>
-        <tr><th>A2</th><td><input id="c" value="0"></td><td><input id="d" value="2"></td></tr>
-    </table>
+    <div class="controls">
+        <button onclick="addGameRow()">➕ Strategia A</button>
+        <button onclick="removeGameRow()">➖ Strategia A</button>
+        <button onclick="addGameCol()">➕ Strategia B</button>
+        <button onclick="removeGameCol()">➖ Strategia B</button>
+    </div>
+
+    <table id="gameTable"></table>
 
     <button class="main" onclick="calculateGame()">Oblicz grę</button>
     <pre id="gameResult"></pre>
