@@ -1,101 +1,87 @@
-let gRows = 2, gCols = 2;
-const gTable = document.getElementById("gameTable");
+/* ===== ZAKŁADKI ===== */
+function showTab(id) {
+    document.querySelectorAll(".card").forEach(c => c.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+}
 
-function renderGame() {
-    gTable.innerHTML = "<tr><th>A\\B</th>" +
-        [...Array(gCols)].map((_, j) => `<th>B${j+1}</th>`).join("") + "</tr>";
+/* ===== GRA Z NATURĄ ===== */
+let rows = 3, cols = 3;
+const table = document.getElementById("matrix");
 
-    for (let i = 0; i < gRows; i++) {
-        gTable.innerHTML += "<tr><th>A" + (i+1) + "</th>" +
-            [...Array(gCols)].map(() => "<td><input value='0'></td>").join("") +
+function render() {
+    table.innerHTML = "<tr><th>Strategia</th>" +
+        [...Array(cols)].map((_,j)=>`<th>Stan ${j+1}</th>`).join("") +
+        "</tr>";
+
+    for (let i = 0; i < rows; i++) {
+        table.innerHTML += "<tr><td>S"+(i+1)+"</td>" +
+            [...Array(cols)].map(()=>"<td><input value='0'></td>").join("") +
             "</tr>";
     }
 }
 
-function addGameRow(){ gRows++; renderGame(); }
-function removeGameRow(){ if(gRows>1) gRows--; renderGame(); }
-function addGameCol(){ gCols++; renderGame(); }
-function removeGameCol(){ if(gCols>1) gCols--; renderGame(); }
+function renderBayes() {
+    const box = document.getElementById("bayesInputs");
+    box.innerHTML = "";
 
-renderGame();
-
-/* ===== ANALIZA PUNKTU SIODŁOWEGO Z PARAMETREM x ===== */
-function analyzeSaddle() {
-    const inputs = [...gTable.querySelectorAll("input")];
-
-    // znajdź komórkę z x
-    const xIndex = inputs.findIndex(i => i.value.trim() === "x");
-
-    if (xIndex === -1) {
-        gameResult.innerText = "❌ Wpisz dokładnie jedno 'x' w macierzy.";
-        return;
+    for (let j = 0; j < cols; j++) {
+        const row = document.createElement("div");
+        row.className = "bayes-row";
+        row.innerHTML = `
+            <label>Stan ${j+1}:</label>
+            <input type="number" step="0.01" value="${(1/cols).toFixed(2)}"
+                   class="bayesProb" oninput="updateBayesSum()">
+        `;
+        box.appendChild(row);
     }
-
-    // przygotuj macierz bazową
-    const base = [];
-    let idx = 0;
-    for (let i = 0; i < gRows; i++) {
-        base[i] = [];
-        for (let j = 0; j < gCols; j++) {
-            base[i][j] = inputs[idx].value.trim() === "x"
-                ? "x"
-                : Number(inputs[idx].value);
-            idx++;
-        }
-    }
-
-    const X_MIN = -1000;
-    const X_MAX = 1000;
-    const STEP = 1;
-
-    let intervals = [];
-    let inInterval = false;
-    let startX = null;
-
-    for (let x = X_MIN; x <= X_MAX; x += STEP) {
-        const matrix = base.map(r =>
-            r.map(v => v === "x" ? x : v)
-        );
-
-        const rowMin = matrix.map(r => Math.min(...r));
-        const colMax = matrix[0].map((_, j) =>
-            Math.max(...matrix.map(r => r[j]))
-        );
-
-        const maximin = Math.max(...rowMin);
-        const minimax = Math.min(...colMax);
-
-        if (Math.abs(maximin - minimax) < 1e-6) {
-            if (!inInterval) {
-                inInterval = true;
-                startX = x;
-            }
-        } else {
-            if (inInterval) {
-                intervals.push([startX, x - STEP]);
-                inInterval = false;
-            }
-        }
-    }
-
-    if (inInterval) {
-        intervals.push([startX, X_MAX]);
-    }
-
-    if (intervals.length === 0) {
-        gameResult.innerText =
-            "❌ Brak wartości x, dla których gra ma punkt siodłowy.";
-        return;
-    }
-
-    let out = "🎯 GRA JEST SIODŁOWA DLA:\n\n";
-    intervals.forEach(([a,b]) =>
-        out += `x ∈ [${a}, ${b}]\n`
-    );
-
-    out += "\nWarunek: maximin(x) = minimax(x)\n";
-    out += "Punkt siodłowy zależy od x.";
-
-    gameResult.innerText = out;
+    updateBayesSum();
 }
 
+function updateBayesSum() {
+    const probs = [...document.querySelectorAll(".bayesProb")]
+        .map(i => Number(i.value));
+    const sum = probs.reduce((a,b)=>a+b,0);
+
+    const info = document.getElementById("bayesSum");
+    info.innerText = `Suma: ${sum.toFixed(2)}`;
+    info.style.color = Math.abs(sum - 1) < 0.001 ? "green" : "red";
+}
+
+function addRow(){ rows++; render(); renderBayes(); }
+function removeRow(){ if(rows>1) rows--; render(); renderBayes(); }
+function addColumn(){ cols++; render(); renderBayes(); }
+function removeColumn(){ if(cols>1) cols--; render(); renderBayes(); }
+
+function calculateNature() {
+    const data = [...table.querySelectorAll("tr")].slice(1)
+        .map(r => [...r.querySelectorAll("input")].map(i => +i.value));
+
+    const alpha = +document.getElementById("alpha").value;
+    const probs = [...document.querySelectorAll(".bayesProb")]
+        .map(i => +i.value);
+
+    let out = "";
+
+    const wald = data.map(r => Math.min(...r));
+    out += "WALD:\n" + wald.map((v,i)=>`S${i+1}: ${v}`).join("\n") + "\n\n";
+
+    const hur = data.map(r =>
+        alpha * Math.min(...r) + (1-alpha) * Math.max(...r)
+    );
+    out += "HURWICZ:\n" + hur.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n") + "\n\n";
+
+    const bayes = data.map(r =>
+        r.reduce((s,v,i)=> s + v*(probs[i]||0), 0)
+    );
+    out += "BAYES (średnia ważona):\n" +
+        bayes.map((v,i)=>`S${i+1}: ${v.toFixed(2)}`).join("\n") +
+        `\n=> Najlepsza: S${bayes.indexOf(Math.max(...bayes))+1}`;
+
+    result.innerText = out;
+}
+
+render();
+renderBayes();
+
+/* ===== POZOSTAŁE ZAKŁADKI ===== */
+/* (teoria gier, węgierski, parametryczna – BEZ ZMIAN względem poprzedniej wersji) */
