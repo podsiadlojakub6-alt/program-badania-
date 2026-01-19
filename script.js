@@ -98,3 +98,4 @@ function analyzeSaddle() {
 
     gameResult.innerText = out;
 }
+
